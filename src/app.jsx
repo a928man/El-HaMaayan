@@ -1,3 +1,5 @@
+// VERSION MARKER: v-circles-navbuttons-2026-08-19c — if you don't see this
+// exact line when you open src/App.jsx on GitHub, the upload did not work.
 import React, { useState, useRef, useEffect } from "react";
 import {
   ArrowRight,
