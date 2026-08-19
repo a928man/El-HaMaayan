@@ -392,8 +392,17 @@ const SCENE_PALETTES = [
   { sky: "#E3F1EC", hill: "#9FC79B", tree: "#6BA36F", trunk: "#8B6B4A", water: "#3AC4B6" },
 ];
 
+function hashSeed(value) {
+  const str = String(value ?? 0);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
 function SpringScene({ seed = 0, height = 120, radius = "16px 16px 0 0" }) {
-  const p = SCENE_PALETTES[seed % SCENE_PALETTES.length];
+  const p = SCENE_PALETTES[hashSeed(seed) % SCENE_PALETTES.length];
   return (
     <div style={{ width: "100%", height, borderRadius: radius, overflow: "hidden", position: "relative" }}>
       <svg width="100%" height="100%" viewBox="0 0 300 180" preserveAspectRatio="xMidYMid slice">
