@@ -19,9 +19,11 @@ import {
   CircleDollarSign,
   Accessibility,
   Clock,
+  Navigation,
+  MapPinned,
 } from "lucide-react";
 
-const STONE = "#E6F1FB";
+const STONE = "#E9F2FA";
 const SPRING = "#1FA093";
 const INK = "#26302B";
 const SUN = "#F2703C";
@@ -440,7 +442,7 @@ function SpringVisual({ spring, index, height = 120, radius = 0 }) {
 
 function GridSpringCard({ spring, index, onClick }) {
   const w = WATER_LEVELS[spring.water];
-  const circleSize = 92;
+  const circleSize = 104;
   return (
     <div
       onClick={onClick}
@@ -465,7 +467,7 @@ function GridSpringCard({ spring, index, onClick }) {
           height: circleSize,
           borderRadius: "50%",
           overflow: "hidden",
-          border: "4px solid #fff",
+          border: `4px solid ${STONE}`,
           boxShadow: "0 4px 12px rgba(38,48,43,0.18)",
         }}
       >
@@ -571,7 +573,7 @@ function BrowseScreen({ onBack, onOpenSpring, springs }) {
         </div>
       </div>
 
-      <div className="ma-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "56px 20px 20px" }}>
+      <div className="ma-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "62px 20px 20px" }}>
         {filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 20px", color: "#8A9AA0" }}>
             <div className="ma-body" style={{ fontSize: 14, marginBottom: 12 }}>לא נמצאו מעיינות התואמים לסינון</div>
@@ -584,7 +586,7 @@ function BrowseScreen({ onBack, onOpenSpring, springs }) {
             </button>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 12, rowGap: 60 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 12, rowGap: 70 }}>
             {filtered.map((s, i) => (
               <GridSpringCard key={s.id} spring={s} index={i} onClick={() => onOpenSpring(s)} />
             ))}
@@ -867,18 +869,20 @@ function SpringDetail({ spring, onBack, onUpdate }) {
             target="_blank"
             rel="noopener noreferrer"
             className="ma-body"
-            style={{ flex: 1, textAlign: "center", background: "#fff", color: "#33CCFF", border: "1.5px solid #33CCFF", borderRadius: 14, padding: "12px", fontSize: 14, fontWeight: 700, textDecoration: "none" }}
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "#fff", color: "#05C8F7", border: "1.5px solid #05C8F7", borderRadius: 14, padding: "12px", fontSize: 14, fontWeight: 700, textDecoration: "none" }}
           >
-            ניווט ב-Waze
+            <Navigation size={16} fill="#05C8F7" />
+            Waze
           </a>
           <a
             href={`https://www.google.com/maps/dir/?api=1&destination=${spring.lat},${spring.lng}`}
             target="_blank"
             rel="noopener noreferrer"
             className="ma-body"
-            style={{ flex: 1, textAlign: "center", background: "#fff", color: "#4285F4", border: "1.5px solid #4285F4", borderRadius: 14, padding: "12px", fontSize: 14, fontWeight: 700, textDecoration: "none" }}
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "#fff", color: "#4285F4", border: "1.5px solid #4285F4", borderRadius: 14, padding: "12px", fontSize: 14, fontWeight: 700, textDecoration: "none" }}
           >
-            ניווט ב-Google Maps
+            <MapPinned size={16} fill="#4285F4" color="#fff" />
+            Google Maps
           </a>
         </div>
         <button
