@@ -18,10 +18,15 @@ import {
   X,
   Check,
   ChevronDown,
+  ChevronLeft,
   CircleDollarSign,
   Accessibility,
   Clock,
   Navigation,
+  Map,
+  PlusCircle,
+  User,
+  MessageCircle,
 } from "lucide-react";
 
 const STONE = "#E9F2FA";
@@ -519,7 +524,7 @@ function applyFilters(springs, filters) {
   });
 }
 
-function BrowseScreen({ onBack, onOpenSpring, springs }) {
+function BrowseScreen({ onOpenSpring, onGoTab, springs }) {
   const [query, setQuery] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -532,14 +537,17 @@ function BrowseScreen({ onBack, onOpenSpring, springs }) {
     <div style={{ height: "100%", background: STONE, display: "flex", flexDirection: "column" }}>
       <FontStyles />
       <div style={{ flexShrink: 0, padding: "18px 20px 12px", background: STONE }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: INK, padding: 4 }}>
-            <ArrowRight size={20} />
-          </button>
-          <div style={{ flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div>
             <div className="ma-mono" style={{ fontSize: 10, color: "#93907F", letterSpacing: 1 }}>המיקום שלי</div>
             <div className="ma-display" style={{ fontSize: 18, fontWeight: 800, color: INK }}>מעיינות בקרבתך</div>
           </div>
+          <button
+            onClick={() => onGoTab("profile")}
+            style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 999, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+          >
+            <User size={18} color={INK} />
+          </button>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: 1, position: "relative" }}>
@@ -596,6 +604,7 @@ function BrowseScreen({ onBack, onOpenSpring, springs }) {
       </div>
 
       {showFilter && <FilterSheet filters={filters} setFilters={setFilters} onClose={() => setShowFilter(false)} />}
+      <TabBar active="browse" onGo={onGoTab} />
     </div>
   );
 }
@@ -778,6 +787,181 @@ function RecentPhotosRow({ photos, onOpenPhoto }) {
   );
 }
 
+function TabBar({ active, onGo }) {
+  const tabs = [
+    { key: "browse", label: "מעיינות", icon: Map },
+    { key: "submit", label: "הוספה", icon: PlusCircle },
+    { key: "profile", label: "פרופיל", icon: User },
+  ];
+  return (
+    <div style={{ flexShrink: 0, background: "#fff", display: "flex", justifyContent: "space-around", padding: "10px 0 22px", borderTop: "1px solid #eef1ee" }}>
+      {tabs.map((t) => {
+        const Icon = t.icon;
+        const isActive = active === t.key;
+        return (
+          <button
+            key={t.key}
+            onClick={() => onGo(t.key)}
+            className="ma-body"
+            style={{ background: "none", border: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer", color: isActive ? SPRING : "#b7c1b8" }}
+          >
+            <Icon size={22} />
+            <span style={{ fontSize: 11, fontWeight: 600 }}>{t.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function SubmitScreen({ onGoTab }) {
+  const [notice, setNotice] = useState(false);
+  return (
+    <div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "column", background: STONE }}>
+      <FontStyles />
+      <div className="ma-scroll" style={{ flex: 1, overflowY: "auto", padding: "56px 20px 16px", display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button
+            onClick={() => onGoTab("browse")}
+            style={{ width: 36, height: 36, borderRadius: 999, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
+          >
+            <ArrowRight size={16} color={INK} />
+          </button>
+          <div className="ma-display" style={{ fontSize: 19, fontWeight: 800, color: INK }}>הוספת מעיין חדש</div>
+        </div>
+
+        <div style={{ background: "#fff", borderRadius: 20, padding: 16 }}>
+          <div style={{ width: "100%", height: 140, borderRadius: 14, background: "#F1F3F1", display: "flex", alignItems: "center", justifyContent: "center", color: "#9aa89f", fontSize: 13 }}>
+            הוספת תמונה של המעיין
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {[
+            { label: "שם המעיין", placeholder: "לדוגמה: עין הבניה" },
+            { label: "אזור", placeholder: "לדוגמה: גליל עליון" },
+          ].map((f) => (
+            <div key={f.label}>
+              <div className="ma-body" style={{ fontSize: 12, color: "#6b7a70", marginBottom: 6, fontWeight: 600 }}>{f.label}</div>
+              <input placeholder={f.placeholder} className="ma-body" style={{ width: "100%", boxSizing: "border-box", background: "#fff", border: "none", borderRadius: 14, padding: "14px 16px", fontSize: 14, color: INK }} />
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div className="ma-body" style={{ fontSize: 12, color: "#6b7a70", marginBottom: 6, fontWeight: 600 }}>מרחק (ק"מ)</div>
+              <input placeholder="0" className="ma-body" style={{ width: "100%", boxSizing: "border-box", background: "#fff", border: "none", borderRadius: 14, padding: "14px 16px", fontSize: 14, color: INK }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div className="ma-body" style={{ fontSize: 12, color: "#6b7a70", marginBottom: 6, fontWeight: 600 }}>הליכה (דק')</div>
+              <input placeholder="0" className="ma-body" style={{ width: "100%", boxSizing: "border-box", background: "#fff", border: "none", borderRadius: 14, padding: "14px 16px", fontSize: 14, color: INK }} />
+            </div>
+          </div>
+          <div>
+            <div className="ma-body" style={{ fontSize: 12, color: "#6b7a70", marginBottom: 6, fontWeight: 600 }}>שעות פעילות</div>
+            <input placeholder="לדוגמה: 8:00–18:00" className="ma-body" style={{ width: "100%", boxSizing: "border-box", background: "#fff", border: "none", borderRadius: 14, padding: "14px 16px", fontSize: 14, color: INK }} />
+          </div>
+        </div>
+
+        <div>
+          <div className="ma-body" style={{ fontSize: 12, color: "#6b7a70", marginBottom: 8, fontWeight: 600 }}>רמת מים נוכחית</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {["יבש", "נמוך", "טוב", "מלא"].map((label) => (
+              <button key={label} className="ma-body" style={{ flex: 1, padding: "10px 0", borderRadius: 999, border: `2px solid ${SPRING}`, background: "#fff", color: SPRING, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="ma-body" style={{ fontSize: 12, color: "#6b7a70", marginBottom: 8, fontWeight: 600 }}>מאפיינים</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {[
+              { label: "חניה", icon: Car },
+              { label: "צל", icon: Trees },
+              { label: "עגלה", icon: Users },
+              { label: "נגישות", icon: Accessibility },
+              { label: "שירותים", icon: Bath },
+              { label: "ישיבה", icon: UtensilsCrossed },
+            ].map((tg) => (
+              <button key={tg.label} className="ma-body" style={{ padding: "10px 14px", borderRadius: 999, border: "2px solid #DCD5C4", background: "#fff", color: "#6b7a70", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                <tg.icon size={13} />
+                {tg.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="ma-body" style={{ fontSize: 12, color: "#6b7a70", marginBottom: 6, fontWeight: 600 }}>הערות (רשות)</div>
+          <textarea placeholder="פרטים נוספים לקהילה..." className="ma-body" style={{ width: "100%", boxSizing: "border-box", minHeight: 70, background: "#fff", border: "none", borderRadius: 14, padding: "14px 16px", fontSize: 14, color: INK, resize: "vertical" }} />
+        </div>
+
+        {notice && (
+          <div className="ma-body" style={{ fontSize: 12, color: "#8A5A00", background: "#FFF3D6", border: `1px solid ${SUN}`, borderRadius: 10, padding: "10px 12px" }}>
+            השליחה עדיין לא מחוברת למאגר הנתונים — בקרוב.
+          </div>
+        )}
+        <button
+          onClick={() => setNotice(true)}
+          className="ma-body"
+          style={{ width: "100%", background: SPRING, border: "none", borderRadius: 999, padding: "16px 0", fontSize: 15, fontWeight: 800, color: "#fff", cursor: "pointer" }}
+        >
+          שליחה לבדיקת הקהילה
+        </button>
+      </div>
+      <TabBar active="submit" onGo={onGoTab} />
+    </div>
+  );
+}
+
+function ProfileScreen({ onGoTab, onLogout, springs }) {
+  const saved = springs.slice(0, 2);
+  return (
+    <div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "column", background: STONE }}>
+      <FontStyles />
+      <div className="ma-scroll" style={{ flex: 1, overflowY: "auto", padding: "56px 20px 16px", display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className="ma-display" style={{ fontSize: 19, fontWeight: 800, color: INK }}>הפרופיל שלי</div>
+        <div style={{ background: "#fff", borderRadius: 20, padding: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 88, height: 88, borderRadius: 999, background: "#F1F3F1", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <User size={36} color="#9aa89f" />
+          </div>
+          <div className="ma-body" style={{ fontSize: 17, fontWeight: 700, color: INK }}>נועה שגיא</div>
+          <div className="ma-body" style={{ fontSize: 12, color: "#8a978d" }}>חברה מ-2024 • 6 מעיינות שסומנו</div>
+        </div>
+        <div>
+          <div className="ma-body" style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 10 }}>מעיינות שמורים</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {saved.map((s) => {
+              const w = WATER_LEVELS[s.water];
+              return (
+                <div key={s.id} style={{ background: "#fff", borderRadius: 16, padding: 10, display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 999, overflow: "hidden", flexShrink: 0 }}>
+                    <SpringVisual spring={s} index={s.id} height={52} radius={999} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div className="ma-body" style={{ fontSize: 14, fontWeight: 700, color: INK }}>{s.name}</div>
+                    <div className="ma-body" style={{ fontSize: 12, color: w.color, fontWeight: 600 }}>{w.label}</div>
+                  </div>
+                  <ChevronLeft size={16} color="#c3ccc4" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <button
+          onClick={onLogout}
+          className="ma-body"
+          style={{ width: "100%", background: "#fff", border: "none", borderRadius: 999, padding: "14px 0", fontSize: 14, fontWeight: 700, color: "#B5652E", cursor: "pointer" }}
+        >
+          התנתקות
+        </button>
+      </div>
+      <TabBar active="profile" onGo={onGoTab} />
+    </div>
+  );
+}
+
 function InfoBox({ icon: Icon, label, value, positive }) {
   return (
     <div style={{ background: "#fff", borderRadius: 14, padding: "12px 10px", textAlign: "center" }}>
@@ -792,6 +976,7 @@ function SpringDetail({ spring, onBack, onUpdate }) {
   const w = WATER_LEVELS[spring.water];
   const crowdLabel = { empty: "רגוע", normal: "בינוני", busy: "עמוס" }[spring.crowded];
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [showCommentsNotice, setShowCommentsNotice] = useState(false);
 
   // Hero photo + "recent uploads" all currently point at the same real
   // photo (honest placeholder until real crowdsourced photos exist per
@@ -891,10 +1076,23 @@ function SpringDetail({ spring, onBack, onUpdate }) {
         <button
           onClick={onUpdate}
           className="ma-body"
-          style={{ width: "100%", background: SUN, color: INK, border: "none", borderRadius: 14, padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
+          style={{ width: "100%", background: SUN, color: "#fff", border: "none", borderRadius: 999, padding: "16px 0", fontSize: 15, fontWeight: 800, cursor: "pointer" }}
         >
           עדכנו את מצב המעיין
         </button>
+        <button
+          onClick={() => setShowCommentsNotice(true)}
+          className="ma-body"
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "none", border: "none", color: "#9aa89f", fontSize: 12, fontWeight: 600, padding: "2px 0", cursor: "pointer" }}
+        >
+          <MessageCircle size={13} />
+          <span>{spring.commentsCount ?? 0} תגובות</span>
+        </button>
+        {showCommentsNotice && (
+          <div className="ma-body" style={{ fontSize: 11, color: "#8A5A00", textAlign: "center" }}>
+            תגובות עדיין לא זמינות — בקרוב.
+          </div>
+        )}
       </div>
 
       {lightboxIndex !== null && <PhotoLightbox photos={photos} startIndex={lightboxIndex} onClose={() => setLightboxIndex(null)} />}
@@ -1120,7 +1318,7 @@ export default function MaayanotApp() {
       {screen === "splash" && <Splash onStart={() => setScreen("browse")} />}
       {screen === "browse" && (
         <BrowseScreen
-          onBack={() => setScreen("splash")}
+          onGoTab={(tab) => setScreen(tab)}
           onOpenSpring={(s) => {
             setActiveSpringId(s.id);
             setScreen("detail");
@@ -1130,6 +1328,14 @@ export default function MaayanotApp() {
       )}
       {screen === "detail" && activeSpring && (
         <SpringDetail spring={activeSpring} onBack={() => setScreen("browse")} onUpdate={() => setShowUpdate(true)} />
+      )}
+      {screen === "submit" && <SubmitScreen onGoTab={(tab) => setScreen(tab)} />}
+      {screen === "profile" && (
+        <ProfileScreen
+          onGoTab={(tab) => setScreen(tab)}
+          onLogout={() => setScreen("splash")}
+          springs={springs}
+        />
       )}
       {showUpdate && activeSpring && (
         <UpdateFlow
