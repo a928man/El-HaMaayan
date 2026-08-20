@@ -45,24 +45,23 @@ const WATER_LEVELS = {
 };
 
 // ============================================================
-// SUPABASE CONNECTION — fill in your real values from
-// Project Settings → API in the Supabase dashboard.
+// SUPABASE — using the official SDK now (see src/supabaseClient.js).
+// Handles sessions/tokens correctly, unlike the raw fetch() calls
+// we started with, which don't manage auth state at all.
 // ============================================================
-const SUPABASE_URL = "https://sbnbfpihfhsyctumpqod.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_sIuxvx0e_w3AO7eYsDkUOw_Y0SiGcL0";
+import { supabase } from "./supabaseClient";
 
 async function fetchSprings() {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/springs?select=*&status=eq.verified`, {
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-    },
-  });
-  if (!res.ok) throw new Error(`Failed to fetch springs: ${res.status}`);
-  const rows = await res.json();
+  const { data, error } = await supabase
+    .from("springs")
+    .select("*")
+    .eq("status", "verified");
+
+  if (error) throw error;
 
   // Map snake_case DB columns to the camelCase shape the UI already
   // expects, so none of the existing components need to change.
-  return rows.map((r) => ({
+  return data.map((r) => ({
     id: r.id,
     name: r.name,
     region: r.region,
@@ -86,6 +85,25 @@ async function fetchSprings() {
     photo: r.main_photo_url || null,
     distanceKm: null, // computed client-side once real geolocation is wired in
   }));
+}
+
+async function sendMagicLink(email) {
+  const { error } = await supabase.auth.signInWithOtp({ email });
+  if (error) throw error;
+}
+
+async function signOut() {
+  await supabase.auth.signOut();
+}
+
+async function submitSpringUpdate(springId, water, crowded, note) {
+  const { error } = await supabase.rpc("submit_spring_update", {
+    p_spring_id: springId,
+    p_water_status: water,
+    p_crowd_level: crowded,
+    p_note: note,
+  });
+  if (error) throw error;
 }
 
 const SPRINGS = [
@@ -915,7 +933,76 @@ function SubmitScreen({ onGoTab }) {
   );
 }
 
-function ProfileScreen({ onGoTab, onLogout, springs }) {
+function LoginScreen({ onGoTab }) {
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!email.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await sendMagicLink(email.trim());
+      setSent(true);
+    } catch (err) {
+      setError("שליחת הקישור נכשלה. בדקו את כתובת המייל ונסו שוב.");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "column", background: STONE }}>
+      <FontStyles />
+      <div style={{ flex: 1, overflowY: "auto", padding: "56px 20px 16px", display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button
+            onClick={() => onGoTab("browse")}
+            style={{ width: 36, height: 36, borderRadius: 999, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
+          >
+            <ArrowRight size={16} color={INK} />
+          </button>
+          <div className="ma-display" style={{ fontSize: 19, fontWeight: 800, color: INK }}>כניסה לחשבון</div>
+        </div>
+
+        {sent ? (
+          <div style={{ background: "#fff", borderRadius: 20, padding: 24, textAlign: "center" }}>
+            <div className="ma-body" style={{ fontSize: 14, color: INK, lineHeight: 1.6 }}>
+              שלחנו קישור כניסה לכתובת<br /><strong>{email}</strong><br />לחצו על הקישור במייל כדי להתחבר.
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="ma-body" style={{ fontSize: 13, color: "#6b7a70", lineHeight: 1.6 }}>
+              הזינו את כתובת המייל שלכם, ונשלח לכם קישור כניסה — בלי צורך בסיסמה.
+            </div>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              dir="ltr"
+              className="ma-body"
+              style={{ width: "100%", boxSizing: "border-box", background: "#fff", border: "none", borderRadius: 14, padding: "14px 16px", fontSize: 14, color: INK }}
+            />
+            {error && <div className="ma-body" style={{ fontSize: 12, color: "#B5652E" }}>{error}</div>}
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="ma-body"
+              style={{ width: "100%", background: SPRING, border: "none", borderRadius: 999, padding: "16px 0", fontSize: 15, fontWeight: 800, color: "#fff", cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1 }}
+            >
+              {loading ? "שולח..." : "שליחת קישור כניסה"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProfileScreen({ onGoTab, onLogout, springs, session }) {
   const saved = springs.slice(0, 2);
   return (
     <div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "column", background: STONE }}>
@@ -926,8 +1013,20 @@ function ProfileScreen({ onGoTab, onLogout, springs }) {
           <div style={{ width: 88, height: 88, borderRadius: 999, background: "#F1F3F1", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <User size={36} color="#9aa89f" />
           </div>
-          <div className="ma-body" style={{ fontSize: 17, fontWeight: 700, color: INK }}>נועה שגיא</div>
-          <div className="ma-body" style={{ fontSize: 12, color: "#8a978d" }}>חברה מ-2024 • 6 מעיינות שסומנו</div>
+          {session ? (
+            <div className="ma-body" dir="ltr" style={{ fontSize: 15, fontWeight: 700, color: INK }}>{session.user.email}</div>
+          ) : (
+            <>
+              <div className="ma-body" style={{ fontSize: 14, color: "#8a978d" }}>עדיין לא מחוברים</div>
+              <button
+                onClick={() => onGoTab("login")}
+                className="ma-body"
+                style={{ background: SPRING, border: "none", borderRadius: 999, padding: "10px 20px", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}
+              >
+                כניסה לחשבון
+              </button>
+            </>
+          )}
         </div>
         <div>
           <div className="ma-body" style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 10 }}>מעיינות שמורים</div>
@@ -949,13 +1048,15 @@ function ProfileScreen({ onGoTab, onLogout, springs }) {
             })}
           </div>
         </div>
-        <button
-          onClick={onLogout}
-          className="ma-body"
-          style={{ width: "100%", background: "#fff", border: "none", borderRadius: 999, padding: "14px 0", fontSize: 14, fontWeight: 700, color: "#B5652E", cursor: "pointer" }}
-        >
-          התנתקות
-        </button>
+        {session && (
+          <button
+            onClick={onLogout}
+            className="ma-body"
+            style={{ width: "100%", background: "#fff", border: "none", borderRadius: 999, padding: "14px 0", fontSize: 14, fontWeight: 700, color: "#B5652E", cursor: "pointer" }}
+          >
+            התנתקות
+          </button>
+        )}
       </div>
       <TabBar active="profile" onGo={onGoTab} />
     </div>
@@ -1130,15 +1231,29 @@ function Select({ label, options, value, onChange }) {
   );
 }
 
-function UpdateFlow({ spring, onClose, onSubmitted, onSubmit }) {
+function UpdateFlow({ spring, onClose, onSubmitted, onSubmit, session, onRequireLogin }) {
   const [water, setWater] = useState(spring.water);
   const [crowd, setCrowd] = useState(spring.crowded);
   const [note, setNote] = useState("");
   const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSubmit = () => {
-    onSubmit(spring.id, { water, crowded: crowd, note });
-    setDone(true);
+  const handleSubmit = async () => {
+    if (!session) {
+      onRequireLogin();
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await submitSpringUpdate(spring.id, water, crowd, note);
+      onSubmit(spring.id, { water, crowded: crowd, note });
+      setDone(true);
+    } catch (err) {
+      setError("שמירת העדכון נכשלה. נסו שוב.");
+    }
+    setSubmitting(false);
   };
 
   if (done) {
@@ -1228,12 +1343,21 @@ function UpdateFlow({ spring, onClose, onSubmitted, onSubmit }) {
       </div>
 
       <div style={{ padding: 20, flexShrink: 0 }}>
+        {!session && (
+          <div className="ma-body" style={{ fontSize: 12, color: "#8A5A00", background: "#FFF3D6", border: `1px solid ${SUN}`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
+            צריך להתחבר כדי לפרסם עדכון — נעביר אתכם לכניסה.
+          </div>
+        )}
+        {error && (
+          <div className="ma-body" style={{ fontSize: 12, color: "#B5652E", marginBottom: 10 }}>{error}</div>
+        )}
         <button
           onClick={handleSubmit}
+          disabled={submitting}
           className="ma-body"
-          style={{ width: "100%", background: SPRING, color: "#fff", border: "none", borderRadius: 14, padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
+          style={{ width: "100%", background: SPRING, color: "#fff", border: "none", borderRadius: 14, padding: "15px", fontSize: 15, fontWeight: 700, cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.7 : 1 }}
         >
-          פרסום העדכון
+          {submitting ? "שולח..." : session ? "פרסום העדכון" : "כניסה לחשבון"}
         </button>
       </div>
     </div>
@@ -1247,6 +1371,7 @@ export default function MaayanotApp() {
   const [loadError, setLoadError] = useState(null);
   const [activeSpringId, setActiveSpringId] = useState(null);
   const [showUpdate, setShowUpdate] = useState(false);
+  const [session, setSession] = useState(null);
 
   useEffect(() => {
     fetchSprings()
@@ -1262,13 +1387,20 @@ export default function MaayanotApp() {
       });
   }, []);
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      // A successful login while mid-update-flow should return the
+      // person straight back to what they were doing, not strand them.
+      if (newSession && screen === "login") setScreen("profile");
+    });
+    return () => listener.subscription.unsubscribe();
+  }, [screen]);
+
   const activeSpring = springs.find((s) => s.id === activeSpringId) || null;
 
   const handleUpdateSubmit = (springId, changes) => {
-    // NOTE: this still only updates local state — it does not yet call
-    // submit_spring_update in the database. That needs real user
-    // authentication first (the function requires auth.uid()), which
-    // is the next piece to build. For now this keeps the UI testable.
     setSprings((prev) =>
       prev.map((s) =>
         s.id === springId
@@ -1330,11 +1462,16 @@ export default function MaayanotApp() {
         <SpringDetail spring={activeSpring} onBack={() => setScreen("browse")} onUpdate={() => setShowUpdate(true)} />
       )}
       {screen === "submit" && <SubmitScreen onGoTab={(tab) => setScreen(tab)} />}
+      {screen === "login" && <LoginScreen onGoTab={(tab) => setScreen(tab)} />}
       {screen === "profile" && (
         <ProfileScreen
           onGoTab={(tab) => setScreen(tab)}
-          onLogout={() => setScreen("splash")}
+          onLogout={async () => {
+            await signOut();
+            setScreen("splash");
+          }}
           springs={springs}
+          session={session}
         />
       )}
       {showUpdate && activeSpring && (
@@ -1343,6 +1480,11 @@ export default function MaayanotApp() {
           onClose={() => setShowUpdate(false)}
           onSubmitted={() => setShowUpdate(false)}
           onSubmit={handleUpdateSubmit}
+          session={session}
+          onRequireLogin={() => {
+            setShowUpdate(false);
+            setScreen("login");
+          }}
         />
       )}
     </div>
