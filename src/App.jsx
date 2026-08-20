@@ -84,6 +84,11 @@ async function fetchSprings() {
     notes: r.notes || "",
     photo: r.main_photo_url || null,
     distanceKm: null, // computed client-side once real geolocation is wired in
+    locationStatus: r.location_status || "estimated",
+    locationConfidence: r.confidence || null,
+    googleMapsUrl: r.google_maps_url || null,
+    wazeUrl: r.waze_url || null,
+    wazePoiName: r.waze_poi_name || null,
   }));
 }
 
@@ -1118,6 +1123,14 @@ function SpringDetail({ spring, onBack, onUpdate }) {
           <div className="ma-mono" style={{ fontSize: 12, color: "#8A8478", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
             <MapPin size={12} /> {spring.region} · {spring.distanceKm} ק״מ ממך
           </div>
+          {spring.locationStatus === "estimated" && (
+            <div
+              className="ma-mono"
+              style={{ fontSize: 10, color: "#8A5A00", background: "#FFF3D6", display: "inline-block", borderRadius: 999, padding: "3px 10px", marginTop: 6 }}
+            >
+              מיקום משוער — טרם אומת
+            </div>
+          )}
         </div>
 
         <RecentPhotosRow photos={photos} onOpenPhoto={setLightboxIndex} />
@@ -1158,7 +1171,7 @@ function SpringDetail({ spring, onBack, onUpdate }) {
       <div style={{ padding: "4px 20px 20px", flexShrink: 0 }}>
         <div style={{ display: "flex", justifyContent: "center", gap: 36, padding: "4px 0" }}>
           <a
-            href={`https://www.google.com/maps/dir/?api=1&destination=${spring.lat},${spring.lng}`}
+            href={spring.googleMapsUrl || `https://www.google.com/maps/dir/?api=1&destination=${spring.lat},${spring.lng}`}
             target="_blank"
             rel="noopener noreferrer"
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textDecoration: "none" }}
@@ -1169,7 +1182,7 @@ function SpringDetail({ spring, onBack, onUpdate }) {
             <span dir="ltr" className="ma-body" style={{ fontSize: 12, fontWeight: 600, color: INK }}>Google Maps</span>
           </a>
           <a
-            href={`https://waze.com/ul?ll=${spring.lat},${spring.lng}&navigate=yes`}
+            href={spring.wazeUrl || `https://waze.com/ul?ll=${spring.lat},${spring.lng}&navigate=yes`}
             target="_blank"
             rel="noopener noreferrer"
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textDecoration: "none" }}
