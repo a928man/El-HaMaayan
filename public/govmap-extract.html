@@ -55,7 +55,7 @@
 
       setTimeout(() => {
         document.getElementById('status').innerText = 'טוען נתוני שכבת מעיינות...';
-        govmap.getLayerEntities({ LayerName: "416" }).then(function (response) {
+        govmap.getLayerEntities({ layerName: "416" }).then(function (response) {
           allResults = response;
           document.getElementById('output').innerText = JSON.stringify(response, null, 2);
           document.getElementById('status').innerText =
