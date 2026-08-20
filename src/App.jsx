@@ -888,7 +888,6 @@ function SpringDetail({ spring, onBack, onUpdate }) {
             <span dir="ltr" className="ma-body" style={{ fontSize: 12, fontWeight: 600, color: INK }}>Waze</span>
           </a>
         </div>
-        </div>
         <button
           onClick={onUpdate}
           className="ma-body"
