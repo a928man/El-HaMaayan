@@ -86,9 +86,12 @@ async function fetchSprings() {
     distanceKm: null, // computed client-side once real geolocation is wired in
     locationStatus: r.location_status || "estimated",
     locationConfidence: r.confidence || null,
+    coordinateStatus: r.coordinate_status || null,
     googleMapsUrl: r.google_maps_url || null,
+    googleDestinationType: r.google_destination_type || null,
     wazeUrl: r.waze_url || null,
     wazePoiName: r.waze_poi_name || null,
+    wazeDestinationType: r.waze_destination_type || null,
   }));
 }
 
@@ -1169,30 +1172,44 @@ function SpringDetail({ spring, onBack, onUpdate }) {
       </div>
 
       <div style={{ padding: "4px 20px 20px", flexShrink: 0 }}>
-        <div style={{ display: "flex", justifyContent: "center", gap: 36, padding: "4px 0" }}>
-          <a
-            href={spring.googleMapsUrl || `https://www.google.com/maps/dir/?api=1&destination=${spring.lat},${spring.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textDecoration: "none" }}
-          >
-            <div style={{ width: 52, height: 52, borderRadius: 999, background: "#0F9D58", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 10px rgba(15,157,88,0.3)" }}>
-              <Navigation size={22} color="#fff" />
+        {["govmap_verified", "independently_verified"].includes(spring.coordinateStatus) ? (
+          <>
+            <div style={{ display: "flex", justifyContent: "center", gap: 36, padding: "4px 0" }}>
+              <a
+                href={spring.googleMapsUrl || `https://www.google.com/maps/dir/?api=1&destination=${spring.lat},${spring.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textDecoration: "none" }}
+              >
+                <div style={{ width: 52, height: 52, borderRadius: 999, background: "#0F9D58", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 10px rgba(15,157,88,0.3)" }}>
+                  <Navigation size={22} color="#fff" />
+                </div>
+                <span dir="ltr" className="ma-body" style={{ fontSize: 12, fontWeight: 600, color: INK }}>Google Maps</span>
+              </a>
+              <a
+                href={spring.wazeUrl || `https://waze.com/ul?ll=${spring.lat},${spring.lng}&navigate=yes`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textDecoration: "none" }}
+              >
+                <div style={{ width: 52, height: 52, borderRadius: 999, background: "#33CCFF", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 10px rgba(51,204,255,0.3)" }}>
+                  <Navigation size={22} color="#fff" />
+                </div>
+                <span dir="ltr" className="ma-body" style={{ fontSize: 12, fontWeight: 600, color: INK }}>Waze</span>
+              </a>
             </div>
-            <span dir="ltr" className="ma-body" style={{ fontSize: 12, fontWeight: 600, color: INK }}>Google Maps</span>
-          </a>
-          <a
-            href={spring.wazeUrl || `https://waze.com/ul?ll=${spring.lat},${spring.lng}&navigate=yes`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textDecoration: "none" }}
-          >
-            <div style={{ width: 52, height: 52, borderRadius: 999, background: "#33CCFF", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 10px rgba(51,204,255,0.3)" }}>
-              <Navigation size={22} color="#fff" />
-            </div>
-            <span dir="ltr" className="ma-body" style={{ fontSize: 12, fontWeight: 600, color: INK }}>Waze</span>
-          </a>
-        </div>
+            {(spring.googleDestinationType === "parking" || spring.googleDestinationType === "access" ||
+              spring.wazeDestinationType === "parking" || spring.wazeDestinationType === "access") && (
+              <div className="ma-body" style={{ textAlign: "center", fontSize: 11, color: "#8A8478", marginTop: 4 }}>
+                הניווט מוביל לחניה/גישה, לא ישירות למעיין
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="ma-body" style={{ textAlign: "center", fontSize: 12, color: "#8A8478", padding: "8px 0" }}>
+            מיקום המעיין טרם אומת מספיק לצורך ניווט
+          </div>
+        )}
         <button
           onClick={onUpdate}
           className="ma-body"
