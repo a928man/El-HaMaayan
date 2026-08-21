@@ -12,7 +12,10 @@ import {
   Footprints,
   Baby,
   Users,
-  Bath,
+  Toilet,
+  Smile,
+  Waves,
+  Flame,
   UtensilsCrossed,
   Camera,
   X,
@@ -73,10 +76,15 @@ async function fetchSprings() {
     shade: r.shade,
     toddler: r.toddler_friendly,
     parking: r.parking,
+    parkingType: r.parking_type || null,
     stroller: r.stroller_friendly,
     easyAccess: r.easy_access,
     toilets: r.toilets,
     seating: r.seating,
+    depthText: r.depth_text || null,
+    picnicTables: r.picnic_tables,
+    bbqArea: r.bbq_area,
+    lastStatusUpdate: r.last_status_update || null,
     paid: r.paid,
     wheelchair: r.wheelchair_accessible,
     hours: r.hours || "",
@@ -906,15 +914,36 @@ function SubmitScreen({ onGoTab }) {
         </div>
 
         <div>
-          <div className="ma-body" style={{ fontSize: 12, color: "#6b7a70", marginBottom: 8, fontWeight: 600 }}>מאפיינים</div>
+          <div className="ma-body" style={{ fontSize: 12, color: "#6b7a70", marginBottom: 6, fontWeight: 600 }}>עומק המים (מטרים)</div>
+          <input placeholder="לדוגמה: 0.30 או 2" className="ma-body" style={{ width: "100%", boxSizing: "border-box", background: "#fff", border: "none", borderRadius: 14, padding: "14px 16px", fontSize: 14, color: INK }} />
+        </div>
+
+        <div>
+          <div className="ma-body" style={{ fontSize: 12, color: "#6b7a70", marginBottom: 8, fontWeight: 600 }}>חניה</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {[
+              { key: "official", label: "חניה מסודרת" },
+              { key: "dirt_any", label: "שטח לא סלול, מתאים לכל רכב" },
+              { key: "dirt_4x4", label: "גישה ברכב 4X4 בלבד" },
+              { key: "none", label: "אין חניה" },
+            ].map((opt) => (
+              <button key={opt.key} className="ma-body" style={{ textAlign: "start", padding: "10px 14px", borderRadius: 14, border: "2px solid #DCD5C4", background: "#fff", color: "#6b7a70", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="ma-body" style={{ fontSize: 12, color: "#6b7a70", marginBottom: 8, fontWeight: 600 }}>מאפיינים נוספים</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {[
-              { label: "חניה", icon: Car },
               { label: "צל", icon: Trees },
-              { label: "עגלה", icon: Users },
+              { label: "עגלה", icon: Baby },
               { label: "נגישות", icon: Accessibility },
-              { label: "שירותים", icon: Bath },
-              { label: "ישיבה", icon: UtensilsCrossed },
+              { label: "שירותים", icon: Toilet },
+              { label: "שולחנות פיקניק", icon: UtensilsCrossed },
+              { label: "אזור מנגל", icon: Flame },
             ].map((tg) => (
               <button key={tg.label} className="ma-body" style={{ padding: "10px 14px", borderRadius: 999, border: "2px solid #DCD5C4", background: "#fff", color: "#6b7a70", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                 <tg.icon size={13} />
@@ -1077,14 +1106,46 @@ function ProfileScreen({ onGoTab, onLogout, springs, session }) {
   );
 }
 
-function InfoBox({ icon: Icon, label, value, positive }) {
+function InfoBox({ icon: Icon, label, value }) {
   return (
     <div style={{ background: "#fff", borderRadius: 14, padding: "12px 10px", textAlign: "center" }}>
-      <Icon size={20} color={positive ? MOSS : "#B8B2A2"} style={{ marginBottom: 6 }} />
+      <Icon size={20} color={MOSS} style={{ marginBottom: 6 }} />
       <div className="ma-body" style={{ fontSize: 11, color: "#8A8478", marginBottom: 2 }}>{label}</div>
       <div className="ma-body" style={{ fontSize: 13, fontWeight: 600, color: INK }}>{value}</div>
     </div>
   );
+}
+
+const PARKING_LABELS = {
+  official: "חניה מסודרת",
+  dirt_any: "חניה לא סלולה",
+  dirt_4x4: "גישה ב-4X4 בלבד",
+  none: "אין חניה",
+};
+
+function parkingLabel(spring) {
+  if (spring.parkingType && PARKING_LABELS[spring.parkingType]) {
+    return PARKING_LABELS[spring.parkingType];
+  }
+  return spring.parking ? "יש" : "אין";
+}
+
+function lastUpdateLabel(lastStatusUpdate) {
+  if (!lastStatusUpdate) return "אין עדכונים עדיין";
+  const days = Math.floor((Date.now() - new Date(lastStatusUpdate).getTime()) / 86400000);
+  if (days <= 0) return "היום";
+  if (days === 1) return "אתמול";
+  return `לפני ${days} ימים`;
+}
+
+function seatingLabel(spring) {
+  if (spring.picnicTables === null && spring.bbqArea === null) {
+    return spring.seating ? "יש" : "אין";
+  }
+  if (spring.picnicTables && spring.bbqArea) return "שולחנות ומנגל";
+  if (spring.picnicTables) return "שולחנות פיקניק";
+  if (spring.bbqArea) return "אזור מנגל";
+  return "אין";
 }
 
 function SpringDetail({ spring, onBack, onUpdate }) {
@@ -1140,18 +1201,18 @@ function SpringDetail({ spring, onBack, onUpdate }) {
 
         <div style={{ padding: "10px 20px 20px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-            <InfoBox icon={Trees} label="צל" value={spring.shade ? "כן" : "לא"} positive={spring.shade} />
-            <InfoBox icon={Car} label="חניה" value={spring.parking ? "יש" : "אין"} positive={spring.parking} />
-            <InfoBox icon={Footprints} label="הליכה" value={`${spring.walkMin} דק׳`} positive />
-            <InfoBox icon={Baby} label="פעוטות" value={spring.toddler ? "מתאים" : "פחות"} positive={spring.toddler} />
-            <InfoBox icon={Users} label="עגלה" value={spring.stroller ? "אפשרי" : "לא"} positive={spring.stroller} />
-            <InfoBox icon={Users} label="עומס" value={crowdLabel} positive={spring.crowded !== "busy"} />
-            <InfoBox icon={Bath} label="שירותים" value={spring.toilets ? "יש" : "אין"} positive={spring.toilets} />
-            <InfoBox icon={UtensilsCrossed} label="ישיבה" value={spring.seating ? "יש" : "אין"} positive={spring.seating} />
-            <InfoBox icon={Camera} label="עדכון אחרון" value="לפני 4 ימים" positive />
-            <InfoBox icon={CircleDollarSign} label="כניסה" value={spring.paid ? "בתשלום" : "חינם"} positive={!spring.paid} />
-            <InfoBox icon={Accessibility} label="נגישות" value={spring.wheelchair ? "נגיש" : "לא נגיש"} positive={spring.wheelchair} />
-            <InfoBox icon={Clock} label="שעות" value={spring.hours || "ללא הגבלה"} positive />
+            <InfoBox icon={Trees} label="צל" value={spring.shade ? "כן" : "לא"} />
+            <InfoBox icon={Car} label="חניה" value={parkingLabel(spring)} />
+            <InfoBox icon={Footprints} label="הליכה" value={`${spring.walkMin} דק׳`} />
+            <InfoBox icon={Smile} label="פעוטות" value={spring.toddler ? "מתאים לפעוטות" : "לא מתאים לפעוטות"} />
+            <InfoBox icon={Waves} label="עומק" value={spring.depthText ? `${spring.depthText} מ׳` : "לא ידוע"} />
+            <InfoBox icon={Users} label="עומס" value={crowdLabel} />
+            <InfoBox icon={Toilet} label="שירותים" value={spring.toilets ? "יש" : "אין"} />
+            <InfoBox icon={UtensilsCrossed} label="ישיבה" value={seatingLabel(spring)} />
+            <InfoBox icon={Camera} label="עדכון אחרון" value={lastUpdateLabel(spring.lastStatusUpdate)} />
+            <InfoBox icon={CircleDollarSign} label="כניסה" value={spring.paid ? "בתשלום" : "חינם"} />
+            <InfoBox icon={Accessibility} label="נגישות" value={spring.wheelchair ? "נגיש" : "לא נגיש"} />
+            <InfoBox icon={Clock} label="שעות" value={spring.hours || "ללא הגבלה"} />
           </div>
 
           {spring.bestSeason && (
